@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 
@@ -50,13 +51,10 @@ struct job * read_jobs(char * filename) {
 
 void print_job_order(void){
     struct job * current_job = job_list;
-    printf("printing job order\n");
     while(current_job != NULL){
         printf("job %d will run for: %d\n", current_job->id, current_job->length);
         current_job = current_job->next;
     }
-    printf("\n");
-
 }
 
 // Function that executes jobs first in first out
@@ -142,20 +140,53 @@ void execute_jobs_sjf(struct job * job_list) {
     }
 
     print_job_order();
+}
 
+void execute_jobs_rr(int timeSlice) {
+    struct job * current_job = job_list;
+    struct job * last_job = job_list;
+
+    while (last_job->next != NULL) {
+        last_job = last_job->next;
+    }
+
+    while (current_job != NULL) {
+        if (current_job->length > timeSlice) {
+            int leftover = current_job->length-timeSlice;
+            current_job->length = timeSlice;
+            struct job * preempted = malloc(sizeof(struct job));
+            preempted->id = current_job->id;
+            preempted->length = leftover;
+            preempted->next = NULL;
+            last_job->next = preempted;
+            last_job = last_job->next;
+        }
+        current_job = current_job->next;  
+    }
+    print_job_order();
 }
 
 int main(int argc, char **argv){
-    //Get the jobs from the file
-    job_list = read_jobs(argv[1]);
-
-    printf("FIFO\n");
-    execute_jobs_fifo(job_list);
-    printf("\n");
-    printf("SJF\n");
-    execute_jobs_sjf(job_list);
-
-
-    printf("Hello, please help me schedule!\n");
+    if( argc == 4 ) {
+        char* policyName = (char*) argv[1];
+        char* jobTrace = (char*) argv[2];
+        int timeSlice = atoi(argv[3]);
+        printf("Execution trace with %s:\n", policyName);
+        job_list = read_jobs(jobTrace);
+        if ((strcmp("FIFO",policyName) == 0)) {
+            execute_jobs_fifo(job_list);
+        } else if ((strcmp("SJF",policyName) == 0)) {
+            execute_jobs_sjf(job_list);
+        } else if ((strcmp("RR",policyName) == 0)) {
+            execute_jobs_rr(timeSlice);
+        }
+        printf("End of execution with %s\n", policyName);
+   }
+   else if( argc > 4 ) {
+      printf("Too many arguments supplied.\n");
+   }
+   else {
+      printf("3 arguments expected.\n");
+   }
     return 0;
 }
