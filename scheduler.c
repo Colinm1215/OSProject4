@@ -2,13 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+int currentTime = 0;
 
 struct job {
     int id ;
     int length ;
     // other meta data
-    struct job * next ;
+    struct job * next;
+    int responseTime;
+    int waitTime;
+    int turnAround;
 };
 
 struct job *job_list;
@@ -60,6 +63,12 @@ void print_job_order(void){
 // Function that executes jobs first in first out
 void execute_jobs_fifo(struct job * job_list) {
     struct job * curr = job_list;
+    while (curr != NULL) {
+        curr->responseTime = currentTime;
+        curr->waitTime = currentTime;
+        currentTime += curr->length;
+        curr->turnAround = currentTime;
+    }
     print_job_order();
 }
 
@@ -101,7 +110,7 @@ void move_to_end(int number_of_jobs, int id) {
 int get_index_of_largest(int my_size) {
     // Sort the jobs by length
     struct job * current_job = job_list;
-    struct job * sorted_list = NULL;
+    //struct job * sorted_list = NULL;
     int max = current_job->length;
     int index_of_max = current_job->id;
 
@@ -131,12 +140,21 @@ int get_total_jobs(){
 
 
 void execute_jobs_sjf(struct job * job_list) {
-    struct job * current_job = job_list;
     int starting_total_jobs = get_total_jobs();
 
     for(int i = starting_total_jobs; i > 1; i--){
         int index_of_largest = get_index_of_largest(i);
         move_to_end(i, index_of_largest);
+    }
+
+    
+    struct job * curr = job_list;
+
+    while (curr != NULL) {
+        curr->responseTime = currentTime;
+        curr->waitTime = currentTime;
+        currentTime += curr->length;
+        curr->turnAround = currentTime;
     }
 
     print_job_order();
@@ -163,6 +181,10 @@ void execute_jobs_rr(int timeSlice) {
         }
         current_job = current_job->next;  
     }
+
+    
+    struct job * curr = job_list;
+    
     print_job_order();
 }
 
